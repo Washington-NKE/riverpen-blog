@@ -6,6 +6,10 @@ import FeaturedPosts from '@/components/sections/FeaturedPosts';
 import { getPosts } from '@/services';
 import { Post } from '@/models/Post';
 
+// Force dynamic rendering to show new posts immediately
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function Home() {
   const posts: Post[] = (await getPosts()) || [];
 
