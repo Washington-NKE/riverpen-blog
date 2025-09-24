@@ -130,28 +130,47 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error: unknown) {
-    console.error('All comment creation methods failed:', error.message);
+    if (error && typeof error === 'object' && 'message' in error) {
+      console.error('All comment creation methods failed:', (error as { message: string }).message);
+    } else {
+      console.error('All comment creation methods failed:', error);
+    }
     
     // Handle specific GraphQL errors
-    if (error.response?.status === 401) {
-      return NextResponse.json({ 
-        success: false, 
-        message: 'Comments are currently unavailable due to authentication issues.' 
-      }, { status: 503 });
+    interface GraphQLErrorWithResponse {
+      response?: {
+        status?: number;
+        [key: string]: unknown;
+      };
+      [key: string]: unknown;
     }
 
-    if (error.response?.status === 400) {
-      return NextResponse.json({ 
-        success: false, 
-        message: 'Comments are temporarily disabled due to configuration issues.' 
-      }, { status: 503 });
-    }
-
-    if (error.response?.status === 403) {
-      return NextResponse.json({ 
-        success: false, 
-        message: 'Comments are currently disabled.' 
-      }, { status: 503 });
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'response' in error &&
+      typeof (error as GraphQLErrorWithResponse).response === 'object' &&
+      (error as GraphQLErrorWithResponse).response !== null
+    ) {
+      const response = (error as GraphQLErrorWithResponse).response;
+      if (response?.status === 401) {
+        return NextResponse.json({ 
+          success: false, 
+          message: 'Comments are currently unavailable due to authentication issues.' 
+        }, { status: 503 });
+      }
+      if (response?.status === 400) {
+        return NextResponse.json({ 
+          success: false, 
+          message: 'Comments are temporarily disabled due to configuration issues.' 
+        }, { status: 503 });
+      }
+      if (response?.status === 403) {
+        return NextResponse.json({ 
+          success: false, 
+          message: 'Comments are currently disabled.' 
+        }, { status: 503 });
+      }
     }
 
     return NextResponse.json({ 
